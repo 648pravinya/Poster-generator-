@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Cinematic Poster Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 3em;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a6f, #c44569);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #a8dadc;
+            font-size: 1.2em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #a8dadc;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .color-picker-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .color-input {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input[type="color"] {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a6f);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+            margin-top: 20px;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255, 107, 107, 0.5);
+        }
+
+        .poster-preview {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .poster-canvas {
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 2/3;
+            background: #1a1a2e;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .poster-content {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .poster-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.7;
+        }
+
+        .poster-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.8) 100%);
+        }
+
+        .poster-title {
+            position: relative;
+            z-index: 10;
+            font-size: 3.5em;
+            font-weight: 900;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 5px 20px rgba(0, 0, 0, 0.8);
+            margin-top: auto;
+            line-height: 1.1;
+        }
+
+        .poster-tagline {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            font-size: 1.2em;
+            margin-top: 15px;
+            font-style: italic;
+            opacity: 0.9;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .poster-credits {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            font-size: 0.9em;
+            margin-top: 20px;
+            opacity: 0.7;
+        }
+
+        .poster-character {
+            position: absolute;
+            font-size: 15em;
+            opacity: 0.15;
+            z-index: 5;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-shadow: 0 0 100px currentColor;
+        }
+
+        .download-btn {
+            margin-top: 20px;
+            padding: 15px 40px;
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(78, 205, 196, 0.4);
+        }
+
+        .ai-prompts {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 30px;
+        }
+
+        .prompt-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+
+        .prompt-box.midjourney { border-color: #5865F2; }
+        .prompt-box.leonardo { border-color: #9333ea; }
+        .prompt-box.firefly { border-color: #ff6b6b; }
+
+        .prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .prompt-title {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .copy-btn {
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .prompt-text {
+            font-family: monospace;
+            line-height: 1.6;
+            color: #a8dadc;
+        }
+
+        .genre-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #a8dadc;
+        }
+
+        .demo-images {
+            display: none;
+        }
+
+        .texture-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0,0,0,.1) 2px,
+                    rgba(0,0,0,.1) 4px
+                );
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 AI Cinematic Poster Generator</h1>
+            <p class="subtitle">Create stunning movie posters with AI-powered design</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Controls Panel -->
+            <div class="controls-panel">
+                <h2 style="margin-bottom: 20px; color: #ff6b6b;">🎨 Design Your Poster</h2>
+                
+                <div class="form-group">
+                    <label>🎭 Genre</label>
+                    <select id="genre">
+                        <option value="">Select Genre...</option>
+                        <option value="action">Action</option>
+                        <option value="horror">Horror</option>
+                        <option value="scifi">Sci-Fi</option>
+                        <option value="drama">Drama</option>
+                        <option value="fantasy">Fantasy</option>
+                        <option value="thriller">Thriller</option>
+                        <option value="romance">Romance</option>
+                        <option value="comedy">Comedy</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>🎬 Movie Title</label>
+                    <input type="text" id="title" placeholder="e.g., The Last Guardian">
+                </div>
+
+                <div class="form-group">
+                    <label>💭 Tagline</label>
+                    <input type="text" id="tagline" placeholder="e.g., Hope dies last">
+                </div>
+
+                <div class="form-group">
+                    <label>🌆 Setting/Scene</label>
+                    <textarea id="setting" placeholder="e.g., Dystopian city at night with neon lights"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>🎨 Color Scheme</label>
+                    <div class="color-picker-group">
+                        <div class="color-input">
+                            <input type="color" id="color1" value="#ff6b6b">
+                            <span style="font-size: 0.8em; margin-top: 5px;">Primary</span>
+                        </div>
+                        <div class="color-input">
+                            <input type="color" id="color2" value="#4ecdc4">
+                            <span style="font-size: 0.8em; margin-top: 5px;">Secondary</span>
+                        </div>
+                        <div class="color-input">
+                            <input type="color" id="color3" value="#1a1a2e">
+                            <span style="font-size: 0.8em; margin-top: 5px;">Background</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>🌟 Mood</label>
+                    <select id="mood">
+                        <option value="dark">Dark & Moody</option>
+                        <option value="vibrant">Vibrant & Energetic</option>
+                        <option value="mysterious">Mysterious</option>
+                        <option value="epic">Epic & Grand</option>
+                        <option value="intimate">Intimate</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>👤 Main Character/Subject</label>
+                    <input type="text" id="character" placeholder="e.g., Lone warrior in armor">
+                </div>
+
+                <button class="generate-btn" onclick="generatePoster()">
+                    ✨ Generate Poster
+                </button>
+            </div>
+
+            <!-- Poster Preview -->
+            <div class="poster-preview">
+                <h2 style="margin-bottom: 20px; color: #4ecdc4;">🖼️ Preview</h2>
+                <div class="poster-canvas" id="posterCanvas">
+                    <div class="poster-content" id="posterContent">
+                        <div class="loading">
+                            <p>👆 Fill in the details and click Generate</p>
+                            <p style="font-size: 0.9em; margin-top: 10px; opacity: 0.7;">Your cinematic poster will appear here</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="download-btn" onclick="downloadPoster()" id="downloadBtn" style="display: none;">
+                    📥 Download Poster
+                </button>
+            </div>
+        </div>
+
+        <!-- AI Prompts Section -->
+        <div class="ai-prompts" id="aiPrompts" style="display: none;">
+            <h2 style="margin-bottom: 20px; color: #ff6b6b;">🤖 AI Generation Prompts</h2>
+            <p style="margin-bottom: 20px; color: #a8dadc;">Use these optimized prompts in AI tools to generate actual poster images:</p>
+            
+            <div class="prompt-box midjourney">
+                <div class="prompt-header">
+                    <span class="prompt-title">🎨 Midjourney</span>
+                    <button class="copy-btn" onclick="copyPrompt('midjourney')">📋 Copy</button>
+                </div>
+                <div class="prompt-text" id="midjourneyPrompt"></div>
+            </div>
+
+            <div class="prompt-box leonardo">
+                <div class="prompt-header">
+                    <span class="prompt-title">🚀 Leonardo AI</span>
+                    <button class="copy-btn" onclick="copyPrompt('leonardo')">📋 Copy</button>
+                </div>
+                <div class="prompt-text" id="leonardoPrompt"></div>
+            </div>
+
+            <div class="prompt-box firefly">
+                <div class="prompt-header">
+                    <span class="prompt-title">🔥 Adobe Firefly</span>
+                    <button class="copy-btn" onclick="copyPrompt('firefly')">📋 Copy</button>
+                </div>
+                <div class="prompt-text" id="fireflyPrompt"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden demo images for different genres -->
+    <div class="demo-images">
+        <img id="action-bg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='750'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23ff6b00'/%3E%3Cstop offset='1' stop-color='%23000'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='500' height='750' fill='url(%23a)'/%3E%3C/svg%3E">
+        <img id="horror-bg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='750'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23330000'/%3E%3Cstop offset='1' stop-color='%23000'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='500' height='750' fill='url(%23b)'/%3E%3C/svg%3E">
+        <img id="scifi-bg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='750'%3E%3Cdefs%3E%3ClinearGradient id='c' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%230066ff'/%3E%3Cstop offset='1' stop-color='%23000'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='500' height='750' fill='url(%23c)'/%3E%3C/svg%3E">
+    </div>
+
+    <script>
+        const genreEmojis = {
+            action: '💥',
+            horror: '👻',
+            scifi: '🚀',
+            drama: '🎭',
+            fantasy: '🐉',
+            thriller: '🔪',
+            romance: '💕',
+            comedy: '😂'
+        };
+
+        const genreStyles = {
+            action: {
+                font: 'Impact, Arial Black, sans-serif',
+                colors: ['#ff6b00', '#ffaa00', '#000000']
+            },
+            horror: {
+                font: 'Georgia, serif',
+                colors: ['#8b0000', '#330000', '#000000']
+            },
+            scifi: {
+                font: 'Courier New, monospace',
+                colors: ['#00ffff', '#0066ff', '#000033']
+            },
+            drama: {
+                font: 'Georgia, serif',
+                colors: ['#d4af37', '#8b7355', '#2c1810']
+            },
+            fantasy: {
+                font: 'Palatino, serif',
+                colors: ['#9370db', '#4b0082', '#1a0033']
+            },
+            thriller: {
+                font: 'Arial, sans-serif',
+                colors: ['#ff0000', '#660000', '#000000']
+            },
+            romance: {
+                font: 'Brush Script MT, cursive',
+                colors: ['#ff69b4', '#ff1493', '#8b0045']
+            },
+            comedy: {
+                font: 'Comic Sans MS, cursive',
+                colors: ['#ffff00', '#ff8c00', '#ff4500']
+            }
+        };
+
+        function generatePoster() {
+            const genre = document.getElementById('genre').value;
+            const title = document.getElementById('title').value;
+            const tagline = document.getElementById('tagline').value;
+            const setting = document.getElementById('setting').value;
+            const mood = document.getElementById('mood').value;
+            const character = document.getElementById('character').value;
+            const color1 = document.getElementById('color1').value;
+            const color2 = document.getElementById('color2').value;
+            const color3 = document.getElementById('color3').value;
+
+            if (!genre || !title) {
+                alert('Please select a genre and enter a movie title!');
+                return;
+            }
+
+            const style = genreStyles[genre] || genreStyles.action;
+            const emoji = genreEmojis[genre] || '🎬';
+
+            // Create poster
+            const posterContent = document.getElementById('posterContent');
+            posterContent.innerHTML = `
+                <div class="poster-overlay" style="background: linear-gradient(180deg, ${color3}00 0%, ${color3}CC 100%);"></div>
+                <div class="texture-overlay"></div>
+                <div class="poster-character" style="color: ${color1};">${emoji}</div>
+                <div style="position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 40px;">
+                    <div style="text-align: center; margin-top: auto;">
+                        <div class="poster-title" style="font-family: ${style.font}; color: ${color1}; text-shadow: 0 0 30px ${color2}, 0 5px 20px ${color3};">
+                            ${title.toUpperCase()}
+                        </div>
+                        ${tagline ? `<div class="poster-tagline" style="color: ${color2};">${tagline}</div>` : ''}
+                    </div>
+                    <div style="text-align: center;">
+                        <div class="poster-credits" style="color: ${color2};">
+                            <p>A ${genre.toUpperCase()} FILM</p>
+                            <p style="margin-top: 5px; font-size: 0.8em;">COMING SOON</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Set background gradient
+            const posterCanvas = document.getElementById('posterCanvas');
+            posterCanvas.style.background = `linear-gradient(135deg, ${color3} 0%, ${color2}33 50%, ${color1}33 100%)`;
+
+            // Show download button
+            document.getElementById('downloadBtn').style.display = 'block';
+
+            // Generate AI prompts
+            generateAIPrompts(genre, title, tagline, setting, mood, character);
+        }
+
+        function generateAIPrompts(genre, title, tagline, setting, mood, character) {
+            const genreDescriptions = {
+                action: 'explosive action, dynamic pose, motion blur, high contrast',
+                horror: 'dark atmosphere, eerie shadows, ominous presence, desaturated colors',
+                scifi: 'futuristic, neon lights, advanced technology, sleek design',
+                drama: 'emotional depth, natural lighting, intimate moment, muted tones',
+                fantasy: 'magical elements, epic scale, mythical creatures, vibrant colors',
+                thriller: 'tense atmosphere, dramatic shadows, noir style, suspenseful',
+                romance: 'soft lighting, warm tones, intimate composition, dreamy atmosphere',
+                comedy: 'bright colors, energetic composition, playful elements, lighthearted'
+            };
+
+            const moodDesc = {
+                dark: 'moody, low-key lighting, mysterious shadows',
+                vibrant: 'colorful, high energy, dynamic lighting',
+                mysterious: 'enigmatic, atmospheric haze, subtle details',
+                epic: 'grand scale, dramatic lighting, cinematic scope',
+                intimate: 'close composition, soft focus, personal connection'
+            };
+
+            const genreStyle = genreDescriptions[genre] || 'cinematic style';
+            const moodStyle = moodDesc[mood] || 'atmospheric';
+
+            const basePrompt = `${character || 'main character'} in ${setting || 'dramatic scene'}, ${genreStyle}, ${moodStyle}`;
+
+            const prompts = {
+                midjourney: `/imagine cinematic movie poster, ${basePrompt}, professional photography, dramatic composition, highly detailed, 8k, film grain, award-winning poster design --ar 2:3 --v 6 --style raw --s 250`,
+                leonardo: `cinematic movie poster of ${basePrompt}, ${genre} movie atmosphere, professional color grading, volumetric lighting, ultra detailed, photorealistic, theatrical poster composition, 8k quality`,
+                firefly: `Professional movie poster: ${basePrompt}, ${genre} genre aesthetic, dramatic lighting, cinematic composition, high quality poster design, photorealistic style, theatrical release quality`
+            };
+
+            document.getElementById('midjourneyPrompt').textContent = prompts.midjourney;
+            document.getElementById('leonardoPrompt').textContent = prompts.leonardo;
+            document.getElementById('fireflyPrompt').textContent = prompts.firefly;
+            document.getElementById('aiPrompts').style.display = 'block';
+        }
+
+        function copyPrompt(type) {
+            const promptId = type + 'Prompt';
+            const text = document.getElementById(promptId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ Prompt copied to clipboard!');
+            });
+        }
+
+        function downloadPoster() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 2000;
+            canvas.height = 3000;
+
+            const posterCanvas = document.getElementById('posterCanvas');
+            
+            // This is a simplified download - in production you'd use html2canvas or similar
+            alert('💡 To download:\n\n1. Right-click on the poster\n2. Select "Save image as..."\n\nOr use the AI prompts below to generate high-quality images in Midjourney, Leonardo AI, or Adobe Firefly!');
+        }
+
+        // Auto-update colors based on genre
+        document.getElementById('genre').addEventListener('change', function(e) {
+            const genre = e.target.value;
+            if (genre && genreStyles[genre]) {
+                const colors = genreStyles[genre].colors;
+                document.getElementById('color1').value = colors[0];
+                document.getElementById('color2').value = colors[1];
+                document.getElementById('color3').value = colors[2];
+            }
+        });
+    </script>
+</body>
+</html>

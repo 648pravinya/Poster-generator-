@@ -78,21 +78,3 @@ open poster-generator.html
 ```
 
 (or just **double-click** the HTML file)
-
----
-
-## 🛠️ Future Enhancements
-
-💡 Potential improvements:
-
-* 🎨 Export poster as PNG/JPG automatically
-* 🧠 Add AI image generation via API
-* 🏷️ Upload photos for custom scenes
-* 🖼️ Add poster templates
-* 🎵 Sound effects & animation 
-Would you like me to:
-✅ create a **GitHub repository description** too?
-✅ generate badges (shields.io)?
-✅ deploy this as a live webpage on GitHub Pages for you?
-
-Just tell me!
